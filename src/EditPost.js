@@ -1,11 +1,18 @@
 import React from 'react';
-import { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-const EditPost = ({
-    posts, handleEdit, editBody, setEditBody, editTitle, setEditTitle
-}) => {
+import { useState, useEffect , useContext} from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import api from './api/posts';
+import {format} from 'date-fns';
+import DataContext from './context/DataContext';
+
+const EditPost = () => {
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const navigate = useNavigate()
+  const { posts, setPosts,  } = useContext(DataContext)
   const {id} = useParams() ;//from route
   const post = posts.find(post=>(post.id).toString() === id);
+
   //to fill in the content from the posts api
   useEffect(() => {
     if(post){
@@ -13,6 +20,23 @@ const EditPost = ({
         setEditBody(post.body);
     }
   }, [post, setEditBody, setEditTitle])
+
+  //handling edit
+  const handleEdit = async (id) => {
+    const datetime = format(new Date(), 'MMMM dd, yyyy pp'); //month date, year time
+    const updatedPost = {id, title: editTitle, datetime, body: editBody};
+    try{
+        const response  = await api.put('/posts/'+id, updatedPost);
+        setPosts(posts.map(post => post.id === id 
+                        ? {...response.data}
+                        : post));
+        setEditBody('');
+        setEditTitle('');
+        navigate('/');
+    }catch(err){
+        console.log("Error "+err.message);
+    }
+  }
   return (
     <main className="NewPost">
         {editTitle && /** if edit title exists then only show the form */
